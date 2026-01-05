@@ -1,22 +1,24 @@
 package dev.williancorrea.algashop.ordering.domain.entity;
 
+import static dev.williancorrea.algashop.ordering.domain.exception.ErrorMessages.VALIDATION_ERROR_BIRTHDATE_MUST_IN_PAST;
+import static dev.williancorrea.algashop.ordering.domain.exception.ErrorMessages.VALIDATION_ERROR_EMAIL_IS_INVALID;
+import static dev.williancorrea.algashop.ordering.domain.exception.ErrorMessages.VALIDATION_ERROR_FULLNAME_IS_BLANK;
+import static dev.williancorrea.algashop.ordering.domain.exception.ErrorMessages.VALIDATION_ERROR_FULLNAME_IS_NULL;
+
 import java.io.Serial;
 import java.io.Serializable;
 import java.time.LocalDate;
 import java.time.OffsetDateTime;
 import java.util.Objects;
 import java.util.UUID;
-import lombok.EqualsAndHashCode;
-import org.apache.commons.validator.routines.EmailValidator;
+import dev.williancorrea.algashop.ordering.domain.validator.FieldValidations;
 
 
-@EqualsAndHashCode(onlyExplicitlyIncluded = true)
 public class Customer implements Serializable {
 
   @Serial
   private static final long serialVersionUID = -8004238397647524479L;
 
-  @EqualsAndHashCode.Include
   private UUID id;
   private String fullName;
   private LocalDate birthDate;
@@ -146,9 +148,9 @@ public class Customer implements Serializable {
   }
 
   private void setFullName(String fullName) {
-    Objects.requireNonNull(fullName);
+    Objects.requireNonNull(fullName, VALIDATION_ERROR_FULLNAME_IS_NULL);
     if (fullName.isBlank()) {
-      throw new IllegalArgumentException("Full name cannot be blank");
+      throw new IllegalArgumentException(VALIDATION_ERROR_FULLNAME_IS_BLANK);
     }
     this.fullName = fullName;
   }
@@ -160,20 +162,14 @@ public class Customer implements Serializable {
     }
 
     if (birthDate.isAfter(LocalDate.now())) {
-      throw new IllegalArgumentException("Birth date cannot be in the future");
+      throw new IllegalArgumentException(VALIDATION_ERROR_BIRTHDATE_MUST_IN_PAST);
     }
 
     this.birthDate = birthDate;
   }
 
   private void setEmail(String email) {
-    Objects.requireNonNull(email);
-    if (email.isBlank()) {
-      throw new IllegalArgumentException("Email cannot be blank");
-    }
-    if (!EmailValidator.getInstance().isValid(email)) {
-      throw new IllegalArgumentException("Invalid email");
-    }
+    FieldValidations.requiresValidEmail(email, VALIDATION_ERROR_EMAIL_IS_INVALID);
     this.email = email;
   }
 
@@ -209,5 +205,19 @@ public class Customer implements Serializable {
   private void setLoyaltyPoints(Integer loyaltyPoints) {
     Objects.requireNonNull(loyaltyPoints);
     this.loyaltyPoints = loyaltyPoints;
+  }
+
+  @Override
+  public boolean equals(Object o) {
+    if (o == null || getClass() != o.getClass()) {
+      return false;
+    }
+    Customer customer = (Customer) o;
+    return Objects.equals(id, customer.id);
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hashCode(id);
   }
 }
