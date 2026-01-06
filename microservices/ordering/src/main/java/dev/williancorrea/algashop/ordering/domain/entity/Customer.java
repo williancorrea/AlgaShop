@@ -1,5 +1,6 @@
 package dev.williancorrea.algashop.ordering.domain.entity;
 
+import static dev.williancorrea.algashop.ordering.domain.exception.ErrorMessages.ERROR_CUSTOMER_LOYALTY_IS_INVALID;
 import static dev.williancorrea.algashop.ordering.domain.exception.ErrorMessages.VALIDATION_ERROR_BIRTHDATE_MUST_IN_PAST;
 import static dev.williancorrea.algashop.ordering.domain.exception.ErrorMessages.VALIDATION_ERROR_EMAIL_IS_INVALID;
 import static dev.williancorrea.algashop.ordering.domain.exception.ErrorMessages.VALIDATION_ERROR_FULLNAME_IS_BLANK;
@@ -11,6 +12,7 @@ import java.time.LocalDate;
 import java.time.OffsetDateTime;
 import java.util.Objects;
 import java.util.UUID;
+import dev.williancorrea.algashop.ordering.domain.exception.CustomerArchivedException;
 import dev.williancorrea.algashop.ordering.domain.validator.FieldValidations;
 
 
@@ -69,11 +71,18 @@ public class Customer implements Serializable {
     this.setLoyaltyPoints(loyaltyPoints);
   }
 
-  public void addLoyaltyPoints(Integer points) {
-    this.loyaltyPoints += points;
+  public void addLoyaltyPoints(Integer loyaltyPointsToAdded) {
+    verifyIfChangeable();
+
+    if (loyaltyPointsToAdded <= 0) {
+      throw new IllegalArgumentException(ERROR_CUSTOMER_LOYALTY_IS_INVALID);
+    }
+
+    this.setLoyaltyPoints(this.loyaltyPoints + loyaltyPointsToAdded);
   }
 
   public void archive() {
+    verifyIfChangeable();
     this.setArchived(true);
     this.setArchivedAt(OffsetDateTime.now());
     this.setFullName("Anonymous");
@@ -81,26 +90,31 @@ public class Customer implements Serializable {
     this.setDocument("000-000-0000");
     this.setEmail(UUID.randomUUID() + "@anonymous.com");
     this.setBirthDate(null);
+    this.setPromotionNotificationsAllowed(false);
   }
 
   public void enablePromotionNotifications() {
+    verifyIfChangeable();
     this.setPromotionNotificationsAllowed(true);
   }
 
   public void disablePromotionNotifications() {
+    verifyIfChangeable();
     this.setPromotionNotificationsAllowed(false);
   }
 
   public void changeName(String fullName) {
+    verifyIfChangeable();
     this.setFullName(fullName);
-
   }
 
   public void changeEmail(String email) {
+    verifyIfChangeable();
     this.setEmail(email);
   }
 
   public void changePhone(String phone) {
+    verifyIfChangeable();
     this.setPhone(phone);
   }
 
@@ -147,6 +161,13 @@ public class Customer implements Serializable {
   public Integer loyaltyPoints() {
     return loyaltyPoints;
   }
+
+  private void verifyIfChangeable() {
+    if (Boolean.TRUE.equals(this.isArchived())) {
+      throw new CustomerArchivedException();
+    }
+  }
+
 
   private void setId(UUID id) {
     Objects.requireNonNull(id);
