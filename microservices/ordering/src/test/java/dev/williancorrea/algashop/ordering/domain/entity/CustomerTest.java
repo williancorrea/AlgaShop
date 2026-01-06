@@ -38,4 +38,29 @@ class CustomerTest {
     Assertions.assertThatExceptionOfType(IllegalArgumentException.class)
         .isThrownBy(() -> customer.changeEmail("invalidEmail"));
   }
+
+  @Test
+  void given_unarchivedCystomer_whenArchive_shouldAnonymize() {
+    var customer = new Customer(
+        IdGenerator.generateTimeBaseUUID(),
+        "John Due",
+        LocalDate.of(1991, 7, 5),
+        "john.due@email.com",
+        "478-256-2504",
+        "255-08-0578",
+        true,
+        OffsetDateTime.now());
+
+    customer.archive();
+
+    Assertions.assertWith(customer,
+        c -> Assertions.assertThat(c.fullName()).isEqualTo("Anonymous"),
+        c -> Assertions.assertThat(c.email()).isNotEqualTo("john.due@email.com"),
+        c -> Assertions.assertThat(c.phone()).isEqualTo("000-000-0000"),
+        c -> Assertions.assertThat(c.document()).isEqualTo("000-000-0000"),
+        c -> Assertions.assertThat(c.birthDate()).isNull()
+    );
+
+  }
+
 }
